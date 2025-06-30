@@ -7,6 +7,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import React, { useRef, useState } from "react";
+import AddSkillModal from "./AddSkillModal";
 
 type Props = {
   image: string;
@@ -75,5 +76,6 @@ export default function EditableAvatar({ image, onImageChange }: Props) {
         onChange={handleFileChange}
       />
     </Box>
+    
   );
 }
