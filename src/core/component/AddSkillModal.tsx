@@ -6,6 +6,8 @@ import {
   Button,
   LinearProgress,
   Stack,
+  Slider,
+
 } from "@mui/material";
 import { useState } from "react";
 import SkillModel from "../models/SkillModel";
@@ -84,12 +86,18 @@ export default function AddSkillModal({ open, onClose }: Props) {
             value={skillName}
             onChange={(e) => setSkillName(e.target.value)}
           />
-          <TextField
-            label="Skill Level (0–100)"
-            type="number"
-            inputProps={{ min: 0, max: 100 }}
+          <Typography variant="h6" >
+            Skill Level: {skillLevel}
+          </Typography>
+          <Slider
             value={skillLevel}
-            onChange={(e) => setSkillLevel(parseInt(e.target.value))}
+            onChange={(_, value) =>
+              setSkillLevel(typeof value === "number" ? value : 0)
+            }
+            step={1}
+            min={0}
+            max={100}
+            valueLabelDisplay="auto"
           />
           <TextField
             label="Skill Description"

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../core/firebaseConf/firebase";
 import SkillModel, { SkillModelType } from "../core/models/SkillModel";
 
@@ -9,6 +9,7 @@ type SkillStore = {
   fetchSkills: () => Promise<void>;
   addSkill: (skill: SkillModel) => Promise<void>;
   updateSkill: (skill: SkillModel) => Promise<void>;
+  deleteSkill: (skillName: string) => Promise<void>;
 };
 
 export const useSkillStore = create<SkillStore>((set, get) => ({
@@ -62,7 +63,7 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
 
     try {
       const docRef = doc(db, "skills", skillName);
-      await setDoc(docRef, {});
+      await deleteDoc(docRef);
     } catch (error) {
       console.error("Failed to delete skill:", error);
       set({ skills: prevSkills }); // rollback
