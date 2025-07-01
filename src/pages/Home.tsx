@@ -17,6 +17,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import SkillInfo from './SkillInfo';
 import UserInfo from './UserInfo';
+import Projects from './ProjectsView';
 const drawerWidth = 240;
 interface Props {
     /**
@@ -27,7 +28,8 @@ interface Props {
 }
 enum ViewedPage {
     SKILLINFO = "Skill info",
-    USERINFO = "User info"
+    USERINFO = "User info",
+    PROJECTS = "Projects"
 }
 
 export default function Home() {
@@ -67,6 +69,8 @@ export default function Home() {
                 break;
             case ViewedPage.USERINFO:
                 return <UserInfo />;
+            case ViewedPage.PROJECTS:
+                return <Projects />
             default:
                 break;
         }
@@ -97,6 +101,17 @@ export default function Home() {
                             <InboxIcon />
                         </ListItemIcon>
                         <ListItemText primary="Skills Info" />
+                    </ListItemButton>
+                </ListItem>
+                <ListItem key={'Projects'} disablePadding>
+                    <ListItemButton selected={viewedPage === ViewedPage.PROJECTS} onClick={function () {
+                        handleDrawerClose();
+                        return setViewedPage(ViewedPage.PROJECTS);
+                    }}>
+                        <ListItemIcon>
+                            <InboxIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Projects" />
                     </ListItemButton>
                 </ListItem>
             </List>

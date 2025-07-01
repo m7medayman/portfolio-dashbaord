@@ -1,4 +1,4 @@
-type ProjectModelProps = {
+export  type ProjectModelProps = {
   projectName: string;
   projectCoverImage: string;
   projectImages: string;
@@ -34,6 +34,24 @@ class ProjectModel {
     this.projectType = projectType;
     this.projectCoverImage = projectCoverImage;
   }
+/*************  ✨ Windsurf Command ⭐  *************/
+  
+  /**
+   * Returns a JSON representation of the ProjectModel object
+   * @returns {ProjectModelProps}
+   */
+  toJson(): ProjectModelProps {
+    return {
+      projectName: this.projectName,
+      projectCoverImage: this.projectCoverImage,
+      projectImages: this.projectImages,
+      projectDescription: this.projectDescription,
+      projectLink: this.projectLink,
+      projectGithub: this.projectGithub,
+      projectType: this.projectType,
+    };
+  }
+/*******  03b28500-705f-4cf3-b9c8-644e191ad0d8  *******/
 }
 
 export default ProjectModel;
