@@ -13,7 +13,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import { GitHub, Launch } from '@mui/icons-material';
-import ProjectModel from '../../core/models/ProjectModel'; // Adjust import path as needed
+import ProjectModel from '../../core/models/ProjectModel';
 
 interface ProjectCardProps {
   project: ProjectModel;
@@ -23,14 +23,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [coverImageError, setCoverImageError] = useState(false);
 
-  // Parse project images string to array (assuming comma-separated or similar)
   const getProjectImages = (): string[] => {
     if (!project.projectImages) return [];
-    // Adjust parsing logic based on your actual format
     return project.projectImages.split(',').slice(0, 4).map(img => img.trim());
   };
 
   const projectImages = getProjectImages();
+
+  const handleLinkClick = (label: string) => {
+    console.log(`${label} clicked for project: ${project.projectName}`);
+  };
 
   return (
     <Card
@@ -41,12 +43,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
           transform: 'translateY(-4px)',
-          boxShadow: (theme) => theme.shadows[8],
+          boxShadow: theme => theme.shadows[8],
         },
       }}
     >
       {/* Cover Image */}
-      <Box sx={{ position: 'relative', paddingTop: '56.25%' /* 16:9 Aspect Ratio */ }}>
+      <Box sx={{ position: 'relative', aspectRatio: '16 / 9', width: '100%' }}>
         {imageLoading && (
           <Skeleton
             variant="rectangular"
@@ -78,8 +80,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             display: imageLoading ? 'none' : 'block',
           }}
         />
-        
-        {/* Project Type Chip */}
         {project.projectType && (
           <Chip
             label={project.projectType}
@@ -101,7 +101,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           <ImageList
             sx={{
               width: '100%',
-              height: 'auto',
               margin: 0,
             }}
             cols={4}
@@ -112,7 +111,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                 <Box
                   sx={{
                     position: 'relative',
-                    paddingTop: '100%', // 1:1 Aspect Ratio for thumbnails
+                    width: '100%',
+                    aspectRatio: '1 / 1',
                     backgroundColor: 'grey.200',
                     borderRadius: 1,
                     overflow: 'hidden',
@@ -143,7 +143,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
       {/* Content */}
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Title */}
         <Typography
           gutterBottom
           variant="h5"
@@ -161,7 +160,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           {project.projectName}
         </Typography>
 
-        {/* Description */}
         <Typography
           variant="body2"
           color="text.secondary"
@@ -178,9 +176,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           {project.projectDescription}
         </Typography>
 
-        {/* Action Links */}
+        {/* Links */}
         <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-          {project.projectLink && (
+          {project.projectLink?.trim() && (
             <IconButton
               component={Link}
               href={project.projectLink}
@@ -195,11 +193,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                 },
               }}
               aria-label="View live project"
+              onClick={() => handleLinkClick('Live link')}
             >
               <Launch />
             </IconButton>
           )}
-          {project.projectGithub && (
+
+          {project.projectGithub?.trim() && (
             <IconButton
               component={Link}
               href={project.projectGithub}
@@ -214,6 +214,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                 },
               }}
               aria-label="View on GitHub"
+              onClick={() => handleLinkClick('GitHub')}
             >
               <GitHub />
             </IconButton>
