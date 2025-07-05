@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, MouseEvent } from 'react';
 import {
   Card,
   CardMedia,
@@ -17,9 +17,10 @@ import ProjectModel from '../../core/models/ProjectModel';
 
 interface ProjectCardProps {
   project: ProjectModel;
+  onClick?: ((project: ProjectModel) => void) | null;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [coverImageError, setCoverImageError] = useState(false);
 
@@ -27,11 +28,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     if (!project.projectImages) return [];
     return project.projectImages.split(',').slice(0, 4).map(img => img.trim());
   };
-
   const projectImages = getProjectImages();
 
-  const handleLinkClick = (label: string) => {
-    console.log(`${label} clicked for project: ${project.projectName}`);
+  const handleCardClick = () => {
+    if (onClick) onClick(project);
+  };
+
+  const stopPropagation = (e: MouseEvent) => {
+    e.stopPropagation();
   };
 
   return (
@@ -41,11 +45,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         display: 'flex',
         flexDirection: 'column',
         transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: theme => theme.shadows[8],
-        },
+        ...(onClick && {
+          cursor: 'pointer',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: theme => theme.shadows[8],
+          }
+        })
       }}
+      onClick={onClick ? handleCardClick : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      role={onClick ? 'button' : undefined}
     >
       {/* Cover Image */}
       <Box sx={{ position: 'relative', aspectRatio: '16 / 9', width: '100%' }}>
@@ -159,7 +169,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         >
           {project.projectName}
         </Typography>
-
         <Typography
           variant="body2"
           color="text.secondary"
@@ -193,12 +202,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                 },
               }}
               aria-label="View live project"
-              onClick={() => handleLinkClick('Live link')}
+              onClick={stopPropagation}
             >
               <Launch />
             </IconButton>
           )}
-
           {project.projectGithub?.trim() && (
             <IconButton
               component={Link}
@@ -214,7 +222,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                 },
               }}
               aria-label="View on GitHub"
-              onClick={() => handleLinkClick('GitHub')}
+              onClick={stopPropagation}
             >
               <GitHub />
             </IconButton>

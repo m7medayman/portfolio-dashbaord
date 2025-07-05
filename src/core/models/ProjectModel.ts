@@ -6,6 +6,7 @@ export  type ProjectModelProps = {
   projectLink: string | null;
   projectGithub: string | null;
   projectType: string | null;
+  id : string;
 };
 
 class ProjectModel {
@@ -16,6 +17,7 @@ class ProjectModel {
   projectLink: string | null;
   projectGithub: string | null;
   projectType: string | null;
+  id : string;
 
   constructor({
     projectCoverImage,
@@ -25,6 +27,7 @@ class ProjectModel {
     projectLink,
     projectGithub,
     projectType,
+    id,
   }: ProjectModelProps) {
     this.projectName = projectName;
     this.projectImages = projectImage;
@@ -33,6 +36,7 @@ class ProjectModel {
     this.projectGithub = projectGithub;
     this.projectType = projectType;
     this.projectCoverImage = projectCoverImage;
+    this.id = id
   }
 /*************  ✨ Windsurf Command ⭐  *************/
   
@@ -42,6 +46,7 @@ class ProjectModel {
    */
   toJson(): ProjectModelProps {
     return {
+      id: this.id,
       projectName: this.projectName,
       projectCoverImage: this.projectCoverImage,
       projectImages: this.projectImages,
@@ -51,7 +56,6 @@ class ProjectModel {
       projectType: this.projectType,
     };
   }
-/*******  03b28500-705f-4cf3-b9c8-644e191ad0d8  *******/
 }
 
 export default ProjectModel;

@@ -43,7 +43,7 @@ function ProjectCardTestPage() {
                             }}
                             flexGrow={1}
                         >
-                            <ProjectCard project={project} />
+                            <ProjectCard project={project} onClick={() => navigate(`/project/${project.id}`)} />
                         </Box>
                     ))}
                 </Box>

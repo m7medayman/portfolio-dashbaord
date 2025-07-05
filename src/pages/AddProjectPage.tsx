@@ -72,10 +72,12 @@ const AddProjectPage: React.FC = () => {
       projectImages,
       projectLink,
       projectGithub,
+      id: "",
     });
 
     await addProject({
       project: {
+        id: "",
         projectName,
         projectDescription,
         projectType,
