@@ -19,37 +19,31 @@ import {
     CircularProgress,
 } from "@mui/material";
 import { Edit, Delete, Save, Cancel, Add, CloudUpload, GitHub, Launch } from "@mui/icons-material";
-import ProjectModel, { ProjectModelProps } from "../core/models/ProjectModel";
+import ProjectModel from "../core/models/ProjectModel";
 import { useProjectListStore } from "../store/ProjectApiStore";
 import { useParams, useNavigate } from "react-router-dom";
-
-// Helpers
-type EditableProject = Omit<ProjectModelProps, "projectImages" | "projectCoverImage"> & {
-    projectImages: (string | File)[];
-    projectCoverImage: string | File;
-};
-
-function getImageArray(images: string) {
-    return images
-        ? images.split(",").map(img => img.trim()).filter(Boolean)
-        : [];
-}
+import { createEditProjectStore } from "../store/EditProjectStroe";
 
 export default function ProjectDetailsPage() {
     const { projectName: id } = useParams<{ projectName: string }>();
     const navigate = useNavigate();
+
     // Zustand store selectors
     const { getProject, deleteProject, updateProject, loading } = useProjectListStore();
+
     // Project state
     const [project, setProject] = useState<ProjectModel | undefined>(undefined);
 
-    // For edit mode and form fields.
+    // Edit store - will be created once we have a project
+    const [editStore, setEditStore] = useState<ReturnType<typeof createEditProjectStore> | null>(null);
+    const editState = editStore?.getState();
+
+    // For edit mode
     const [editMode, setEditMode] = useState(false);
-    const [editedProject, setEditedProject] = useState<EditableProject | null>(null);
-    const pristineRef = useRef<EditableProject | null>(null);
 
     // Dialog for delete
     const [openDelete, setOpenDelete] = useState(false);
+
     // File refs
     const coverInputRef = useRef<HTMLInputElement>(null);
     const imagesInputRef = useRef<HTMLInputElement>(null);
@@ -59,9 +53,12 @@ export default function ProjectDetailsPage() {
         let isMounted = true;
         const load = async () => {
             if (id && isMounted) {
-                // Supports both sync and async getProject
                 const result = await getProject(id);
-                if (result && isMounted) setProject(result);
+                if (result && isMounted) {
+                    setProject(result);
+                    // Create edit store with initial project data
+                    setEditStore(() => createEditProjectStore(result));
+                }
             }
         };
         load();
@@ -70,28 +67,8 @@ export default function ProjectDetailsPage() {
         };
     }, [id, getProject]);
 
-    // --- Whenever project changes, reset editable state ---
-    useEffect(() => {
-        if (project) {
-            const data: EditableProject = {
-                id: project.id,
-                keywords: project.keywords,
-                projectName: project.projectName,
-                projectCoverImage: project.projectCoverImage,
-                projectImages: getImageArray(project.projectImages),
-                projectDescription: project.projectDescription,
-                projectType: project.projectType ?? "",
-                projectLink: project.projectLink ?? "",
-                projectGithub: project.projectGithub ?? "",
-            };
-            setEditedProject(data);
-            pristineRef.current = data;
-            setEditMode(false);
-        }
-    }, [project]);
-
     // Render loading or not found states
-    if (!project) {
+    if (!project || !editState) {
         return loading ? (
             <Box sx={{ mt: 10, display: "flex", justifyContent: "center" }}>
                 <CircularProgress />
@@ -105,69 +82,49 @@ export default function ProjectDetailsPage() {
             </Box>
         );
     }
-    if (!editedProject) return null; // Shouldn't happen
 
     // --- Handlers ---
     const handleEdit = () => {
-        pristineRef.current = editedProject;
         setEditMode(true);
     };
 
     const handleCancel = () => {
-        if (pristineRef.current) {
-            setEditedProject(pristineRef.current);
-        }
+        editState.cancelEdit();
         setEditMode(false);
     };
 
     const handleSave = async () => {
-        const { projectName, projectDescription, projectType, projectLink, projectGithub } = editedProject;
+        const { projectName, projectDescription, projectType, projectLink, projectGithub, keywords } = editState;
 
         const updatedProject = await updateProject({
             originalProjectName: project.projectName,
             project: {
                 id: project.id,
-                keywords: editedProject.keywords || [],
+                keywords: keywords || [],
                 projectName,
                 projectDescription,
                 projectType: projectType || null,
                 projectLink: projectLink || null,
                 projectGithub: projectGithub || null,
             },
-            coverImage: editedProject.projectCoverImage,
-            screenshotFiles: editedProject.projectImages,
+            coverImage: editState.projectCoverImage,
+            screenshotFiles: editState.projectImages,
         });
 
         if (updatedProject) {
             setProject(updatedProject);
+            // Recreate edit store with updated project data
+            setEditStore(() => createEditProjectStore(updatedProject));
         }
 
         setEditMode(false);
-
     };
 
-    // Image change: Cover
-    const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setEditedProject(old => old ? { ...old, projectCoverImage: e.target.files![0] } : old);
-        }
-    };
-    // Add screenshot(s)
-    const handleAddScreenshots = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && editedProject) {
-            setEditedProject(old => old
-                ? ({ ...old, projectImages: [...old.projectImages, ...Array.from(e.target.files!)] })
-                : old
-            );
-        }
-    };
     // Remove screenshot image
     const handleRemoveScreenshot = (imgIndex: number) => {
-        setEditedProject(old => old
-            ? ({ ...old, projectImages: old.projectImages.filter((_, i) => i !== imgIndex) })
-            : old
-        );
+        editState.removeScreenshot(imgIndex);
     };
+
     // Delete project dialog
     const handleDelete = () => setOpenDelete(true);
     const handleDeleteConfirm = async () => {
@@ -176,11 +133,6 @@ export default function ProjectDetailsPage() {
         navigate("/");
     };
     const handleDeleteCancel = () => setOpenDelete(false);
-
-    // Editable text fields
-    const handleTextEdit = (field: keyof EditableProject) => (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEditedProject(old => old ? { ...old, [field]: e.target.value } : old);
-    };
 
     // Render helpers
     const getCoverUrl = (cover: string | File) =>
@@ -199,7 +151,7 @@ export default function ProjectDetailsPage() {
                             <CardMedia
                                 component="img"
                                 height={300}
-                                src={getCoverUrl(editedProject.projectCoverImage)}
+                                src={getCoverUrl(editState.projectCoverImage)}
                                 alt="Cover"
                                 sx={{ objectFit: "cover" }}
                             />
@@ -208,13 +160,13 @@ export default function ProjectDetailsPage() {
                                 accept="image/*"
                                 ref={coverInputRef}
                                 style={{ display: "none" }}
-                                onChange={handleCoverFileChange}
+                                onChange={editState.updateCoverImage}
                                 disabled={!editMode}
                                 data-testid="cover-upload"
                             />
                             <Box
                                 sx={{
-                                    position: "absolutworkoute",
+                                    position: "absolute",
                                     top: 16,
                                     left: 16,
                                     bgcolor: "rgba(255,255,255,0.75)",
@@ -236,16 +188,16 @@ export default function ProjectDetailsPage() {
                         <CardMedia
                             component="img"
                             height={300}
-                            image={editedProject.projectCoverImage as string}
-                            alt={editedProject.projectName}
+                            image={editState.projectCoverImage as string}
+                            alt={editState.projectName}
                             sx={{ objectFit: "cover" }}
                         />
                     )}
 
                     {/* Project TYPE */}
-                    {editedProject.projectType && (
+                    {editState.projectType && (
                         <Chip
-                            label={editedProject.projectType}
+                            label={editState.projectType}
                             sx={{
                                 position: "absolute",
                                 top: 16,
@@ -263,15 +215,14 @@ export default function ProjectDetailsPage() {
                     <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
                         {editMode ? (
                             <TextField
-                                value={editedProject.projectName}
+                                value={editState.projectName}
                                 label="Project Name"
                                 fullWidth
-                                onChange={handleTextEdit("projectName")}
-                                inputProps={{ maxLength: 100 }}
+                                onChange={editState.updateField("projectName")}
                                 size="small"
                             />
                         ) : (
-                            editedProject.projectName
+                            editState.projectName
                         )}
                     </Typography>
 
@@ -279,54 +230,98 @@ export default function ProjectDetailsPage() {
                     <Box sx={{ mb: 2 }}>
                         {editMode ? (
                             <TextField
-                                value={editedProject.projectDescription}
+                                value={editState.projectDescription}
                                 label="Description"
                                 fullWidth
                                 minRows={3}
                                 multiline
-                                onChange={handleTextEdit("projectDescription")}
+                                onChange={editState.updateField("projectDescription")}
                             />
                         ) : (
-                            <Typography color="text.secondary">{editedProject.projectDescription}</Typography>
+                            <Typography color="text.secondary">{editState.projectDescription}</Typography>
                         )}
                     </Box>
 
+                    {/* Keywords */}
+                    {editState.keywords && editState.keywords.length > 0 && (
+                        <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                            {editState.keywords.map((keyword, idx) => (
+                                <Chip
+                                    key={idx}
+                                    label={keyword}
+                                    onDelete={editMode ? () => editState.deleteKeyword(idx) : undefined}
+                                    size="small"
+                                />
+                            ))}
+                            {editMode && (
+                                <Chip
+                                    label="+ Add"
+                                    onClick={editState.addKeyword}
+                                    size="small"
+                                    color="primary"
+                                    variant="outlined"
+                                />
+                            )}
+                        </Box>
+                    )}
+
                     {/* Links */}
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
-                        <MuiLink
-                            href={editedProject.projectLink || undefined}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            underline="hover"
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                color: "primary.main",
-                                opacity: editedProject.projectLink ? 1 : 0.3,
-                                cursor: editedProject.projectLink ? "pointer" : "not-allowed",
-                                ml: 0,
-                            }}
-                        >
-                            <Launch sx={{ mr: 0.5 }} fontSize="small" />
-                            {editedProject.projectLink ? "Live Demo" : "No link"}
-                        </MuiLink>
-                        <MuiLink
-                            href={editedProject.projectGithub || undefined}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            underline="hover"
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                color: "text.secondary",
-                                opacity: editedProject.projectGithub ? 1 : 0.3,
-                                cursor: editedProject.projectGithub ? "pointer" : "not-allowed",
-                                ml: 2,
-                            }}
-                        >
-                            <GitHub sx={{ mr: 0.5 }} fontSize="small" />
-                            {editedProject.projectGithub ? "GitHub" : "No GitHub"}
-                        </MuiLink>
+                        {editMode ? (
+                            <>
+                                <TextField
+                                    label="Live Demo URL"
+                                    value={editState.projectLink || ""}
+                                    onChange={editState.updateField("projectLink")}
+                                    size="small"
+                                    sx={{ flex: 1 }}
+                                />
+                                <TextField
+                                    label="GitHub URL"
+                                    value={editState.projectGithub || ""}
+                                    onChange={editState.updateField("projectGithub")}
+                                    size="small"
+                                    sx={{ flex: 1 }}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <MuiLink
+                                    href={editState.projectLink || undefined}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    underline="hover"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        color: "primary.main",
+                                        opacity: editState.projectLink ? 1 : 0.3,
+                                        cursor: editState.projectLink ? "pointer" : "not-allowed",
+                                        ml: 0,
+                                    }}
+                                >
+                                    <Launch sx={{ mr: 0.5 }} fontSize="small" />
+                                    {editState.projectLink ? "Live Demo" : "No link"}
+                                </MuiLink>
+                                <MuiLink
+                                    href={editState.projectGithub || undefined}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    underline="hover"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        color: "text.secondary",
+                                        opacity: editState.projectGithub ? 1 : 0.3,
+                                        cursor: editState.projectGithub ? "pointer" : "not-allowed",
+                                        ml: 2,
+                                    }}
+                                >
+                                    <GitHub sx={{ mr: 0.5 }} fontSize="small" />
+                                    {editState.projectGithub ? "GitHub" : "No GitHub"}
+                                </MuiLink>
+                            </>
+                        )}
                     </Box>
 
                     {/* Project Type */}
@@ -335,13 +330,13 @@ export default function ProjectDetailsPage() {
                             <TextField
                                 label="Project Type"
                                 fullWidth
-                                value={editedProject.projectType}
-                                onChange={handleTextEdit("projectType")}
+                                value={editState.projectType || ""}
+                                onChange={editState.updateField("projectType")}
                                 size="small"
                             />
-                        ) : editedProject.projectType ? (
+                        ) : editState.projectType ? (
                             <Typography color="text.secondary">
-                                Type: {editedProject.projectType}
+                                Type: {editState.projectType}
                             </Typography>
                         ) : null}
                     </Box>
@@ -351,7 +346,7 @@ export default function ProjectDetailsPage() {
                         Screenshots
                     </Typography>
                     <ImageList cols={3} rowHeight={140} sx={{ width: "100%", mb: editMode ? 2 : 4 }}>
-                        {editedProject.projectImages.map((img, idx) => (
+                        {editState.projectImages.map((img, idx) => (
                             <ImageListItem key={idx}>
                                 <Box sx={{ position: "relative" }}>
                                     <img
@@ -401,7 +396,7 @@ export default function ProjectDetailsPage() {
                                         multiple
                                         ref={imagesInputRef}
                                         style={{ display: "none" }}
-                                        onChange={handleAddScreenshots}
+                                        onChange={editState.updateImages}
                                     />
                                 </Button>
                             </ImageListItem>
@@ -426,6 +421,7 @@ export default function ProjectDetailsPage() {
                 {editMode ? <Cancel /> : <Edit />}
             </Fab>
 
+            {/* Save/Delete action bar in edit mode */}
             {/* Save/Delete action bar in edit mode */}
             {editMode && (
                 <Box
@@ -475,4 +471,4 @@ export default function ProjectDetailsPage() {
             </Dialog>
         </Box>
     );
-}
+};
