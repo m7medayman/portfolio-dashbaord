@@ -2,6 +2,7 @@ export  type ProjectModelProps = {
   projectName: string;
   projectCoverImage: string;
   projectImages: string;
+  keywords: Array<string>;
   projectDescription: string;
   projectLink: string | null;
   projectGithub: string | null;
@@ -11,6 +12,7 @@ export  type ProjectModelProps = {
 
 class ProjectModel {
   projectName: string;
+  keywords: Array<string>;
   projectCoverImage: string;
   projectImages: string;
   projectDescription: string;
@@ -26,9 +28,11 @@ class ProjectModel {
     projectDescription,
     projectLink,
     projectGithub,
+    keywords,
     projectType,
     id,
   }: ProjectModelProps) {
+    this.keywords = keywords
     this.projectName = projectName;
     this.projectImages = projectImage;
     this.projectDescription = projectDescription;
@@ -47,6 +51,7 @@ class ProjectModel {
   toJson(): ProjectModelProps {
     return {
       id: this.id,
+      keywords: this.keywords,
       projectName: this.projectName,
       projectCoverImage: this.projectCoverImage,
       projectImages: this.projectImages,

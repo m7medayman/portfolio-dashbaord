@@ -15,6 +15,7 @@ import {
 import { useProjectStore, ProjectAddPayload } from "../store/ProjectStore";
 import ProjectModel from "../core/models/ProjectModel";
 import DeleteIcon from "@mui/icons-material/Delete";
+import KeywordsRow from "../core/component/KeywordsRow"; // Import the KeywordsRow component
 
 // Helper: Accepts File[] and returns an array of local preview URLs
 function filesToPreviewUrls(files: File[]) {
@@ -31,6 +32,7 @@ const AddProjectPage: React.FC = () => {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]); // Add keywords state
 
   const { addProject, loading } = useProjectStore();
 
@@ -55,6 +57,18 @@ const AddProjectPage: React.FC = () => {
     setImagePreviews(filesToPreviewUrls(newFiles));
   };
 
+  // Keywords handlers
+  const addKeyword = () => {
+    const keyword = prompt("Enter a keyword:");
+    if (keyword && keyword.trim()) {
+      setKeywords([...keywords, keyword.trim()]);
+    }
+  };
+
+  const deleteKeyword = (index: number) => {
+    setKeywords(keywords.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -65,6 +79,7 @@ const AddProjectPage: React.FC = () => {
     const projectImages = imagePreviews.join(","); // Store as comma-separated for your model
 
     const newProject = new ProjectModel({
+      keywords,
       projectName,
       projectDescription,
       projectType,
@@ -77,6 +92,7 @@ const AddProjectPage: React.FC = () => {
 
     await addProject({
       project: {
+        keywords,
         id: "",
         projectName,
         projectDescription,
@@ -99,6 +115,7 @@ const AddProjectPage: React.FC = () => {
     setCoverPreview(null);
     setImages([]);
     setImagePreviews([]);
+    setKeywords([]); // Reset keywords
     alert("Project added!");
   };
 
@@ -129,6 +146,17 @@ const AddProjectPage: React.FC = () => {
             onChange={e => setProjectType(e.target.value)}
             fullWidth
           />
+
+          {/* Keywords Section */}
+          <Box>
+            <Typography variant="subtitle2" mb={1}>Keywords</Typography>
+            <KeywordsRow 
+              keywords={keywords}
+              addKeyword={addKeyword}
+              deleteKeyword={deleteKeyword}
+            />
+          </Box>
+
           <TextField
             label="Live Link"
             value={projectLink}

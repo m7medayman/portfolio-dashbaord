@@ -14,15 +14,24 @@ import {
 } from '@mui/material';
 import { GitHub, Launch } from '@mui/icons-material';
 import ProjectModel from '../../core/models/ProjectModel';
+import KeywordsRow from "./KeywordsRow";
 
 interface ProjectCardProps {
   project: ProjectModel;
   onClick?: ((project: ProjectModel) => void) | null;
+  onUpdateKeywords?: (projectId: string, keywords: string[]) => void;
+  editable?: boolean;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({
+  project,
+  onClick,
+  onUpdateKeywords,
+  editable = false
+}) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [coverImageError, setCoverImageError] = useState(false);
+  const [keywords, setKeywords] = useState<string[]>(project.keywords || []);
 
   const getProjectImages = (): string[] => {
     if (!project.projectImages) return [];
@@ -37,6 +46,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
   };
+
+
+
+
 
   return (
     <Card
@@ -184,6 +197,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         >
           {project.projectDescription}
         </Typography>
+
+        {/* Keywords Section */}
+        <Box sx={{ mb: 2 }} onClick={stopPropagation}>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+            Keywords
+          </Typography>
+          {editable ? (
+            <KeywordsRow
+              keywords={keywords}
+              addKeyword={() => { }}
+              deleteKeyword={() => { }}
+            />
+          ) : (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {keywords.map((keyword, index) => (
+                <Chip
+                  key={index}
+                  label={keyword}
+                  size="small"
+                  sx={{
+                    height: '24px',
+                    fontSize: '0.75rem',
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
 
         {/* Links */}
         <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>

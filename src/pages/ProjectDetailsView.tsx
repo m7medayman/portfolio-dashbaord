@@ -36,7 +36,7 @@ function getImageArray(images: string) {
 }
 
 export default function ProjectDetailsPage() {
-    const { projectName } = useParams<{ projectName: string }>();
+    const { projectName: id } = useParams<{ projectName: string }>();
     const navigate = useNavigate();
     // Zustand store selectors
     const { getProject, deleteProject, updateProject, loading } = useProjectStore();
@@ -58,9 +58,9 @@ export default function ProjectDetailsPage() {
     useEffect(() => {
         let isMounted = true;
         const load = async () => {
-            if (projectName && isMounted) {
+            if (id && isMounted) {
                 // Supports both sync and async getProject
-                const result = await getProject(projectName);
+                const result = await getProject(id);
                 if (result && isMounted) setProject(result);
             }
         };
@@ -68,13 +68,14 @@ export default function ProjectDetailsPage() {
         return () => {
             isMounted = false;
         };
-    }, [projectName, getProject]);
+    }, [id, getProject]);
 
     // --- Whenever project changes, reset editable state ---
     useEffect(() => {
         if (project) {
             const data: EditableProject = {
                 id: project.id,
+                keywords: project.keywords,
                 projectName: project.projectName,
                 projectCoverImage: project.projectCoverImage,
                 projectImages: getImageArray(project.projectImages),
@@ -122,10 +123,11 @@ export default function ProjectDetailsPage() {
     const handleSave = async () => {
         const { projectName, projectDescription, projectType, projectLink, projectGithub } = editedProject;
 
-        await updateProject({
+        const updatedProject = await updateProject({
             originalProjectName: project.projectName,
             project: {
                 id: project.id,
+                keywords: editedProject.keywords||[],
                 projectName,
                 projectDescription,
                 projectType: projectType || null,
@@ -136,7 +138,12 @@ export default function ProjectDetailsPage() {
             screenshotFiles: editedProject.projectImages,
         });
 
+        if (updatedProject) {
+            setProject(updatedProject);
+        }
+
         setEditMode(false);
+
     };
 
     // Image change: Cover
@@ -207,7 +214,7 @@ export default function ProjectDetailsPage() {
                             />
                             <Box
                                 sx={{
-                                    position: "absolute",
+                                    position: "absolutworkoute",
                                     top: 16,
                                     left: 16,
                                     bgcolor: "rgba(255,255,255,0.75)",
