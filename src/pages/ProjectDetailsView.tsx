@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import { Edit, Delete, Save, Cancel, Add, CloudUpload, GitHub, Launch } from "@mui/icons-material";
 import ProjectModel, { ProjectModelProps } from "../core/models/ProjectModel";
-import { useProjectStore } from "../store/ProjectStore";
+import { useProjectListStore } from "../store/ProjectApiStore";
 import { useParams, useNavigate } from "react-router-dom";
 
 // Helpers
@@ -39,7 +39,7 @@ export default function ProjectDetailsPage() {
     const { projectName: id } = useParams<{ projectName: string }>();
     const navigate = useNavigate();
     // Zustand store selectors
-    const { getProject, deleteProject, updateProject, loading } = useProjectStore();
+    const { getProject, deleteProject, updateProject, loading } = useProjectListStore();
     // Project state
     const [project, setProject] = useState<ProjectModel | undefined>(undefined);
 
@@ -127,7 +127,7 @@ export default function ProjectDetailsPage() {
             originalProjectName: project.projectName,
             project: {
                 id: project.id,
-                keywords: editedProject.keywords||[],
+                keywords: editedProject.keywords || [],
                 projectName,
                 projectDescription,
                 projectType: projectType || null,

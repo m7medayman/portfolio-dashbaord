@@ -12,7 +12,7 @@ export type ProjectAddPayload = {
   screenshotFiles: ProjectImageInput[];
 };
 
-type ProjectStore = {
+type ProjectApiStore = {
   projects: ProjectModel[];
   loading: boolean;
   fetchProjects: () => Promise<void>;
@@ -22,7 +22,7 @@ type ProjectStore = {
   getProject: (projectName: string) => Promise<ProjectModel | undefined>;
 };
 
-export const useProjectStore = create<ProjectStore>((set, get) => ({
+export const useProjectListStore = create<ProjectApiStore>((set, get) => ({
   projects: [],
   loading: false,
 

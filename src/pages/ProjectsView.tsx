@@ -8,11 +8,11 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import ProjectCard from '../core/component/ProjectCard';
-import { useProjectStore } from '../store/ProjectStore';
+import { useProjectListStore } from '../store/ProjectApiStore';
 
 function ProjectCardTestPage() {
     const navigate = useNavigate();
-    const { projects, fetchProjects } = useProjectStore();
+    const { projects, fetchProjects } = useProjectListStore();
 
     useEffect(() => {
         fetchProjects();

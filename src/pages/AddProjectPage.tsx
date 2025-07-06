@@ -12,7 +12,7 @@ import {
   circularProgressClasses,
   CircularProgress
 } from "@mui/material";
-import { useProjectStore, ProjectAddPayload } from "../store/ProjectStore";
+import { useProjectListStore, ProjectAddPayload } from "../store/ProjectApiStore";
 import ProjectModel from "../core/models/ProjectModel";
 import DeleteIcon from "@mui/icons-material/Delete";
 import KeywordsRow from "../core/component/KeywordsRow"; // Import the KeywordsRow component
@@ -34,7 +34,7 @@ const AddProjectPage: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]); // Add keywords state
 
-  const { addProject, loading } = useProjectStore();
+  const { addProject, loading } = useProjectListStore();
 
   // Handle Cover Image Selection
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,7 +150,7 @@ const AddProjectPage: React.FC = () => {
           {/* Keywords Section */}
           <Box>
             <Typography variant="subtitle2" mb={1}>Keywords</Typography>
-            <KeywordsRow 
+            <KeywordsRow
               keywords={keywords}
               addKeyword={addKeyword}
               deleteKeyword={deleteKeyword}
