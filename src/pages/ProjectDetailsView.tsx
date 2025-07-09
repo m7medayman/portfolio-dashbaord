@@ -22,23 +22,19 @@ import { Edit, Delete, Save, Cancel, Add, CloudUpload, GitHub, Launch } from "@m
 import ProjectModel from "../core/models/ProjectModel";
 import { useProjectListStore } from "../store/ProjectApiStore";
 import { useParams, useNavigate } from "react-router-dom";
-import { createEditProjectStore } from "../store/EditProjectStroe";
+import { createEditProjectStore,EditProjectStore,useEditProjectStore } from "../store/EditProjectStroe";
+import { useStore } from "zustand";
 
 export default function ProjectDetailsPage() {
-    const { projectName: id } = useParams<{ projectName: string }>();
     const navigate = useNavigate();
-
-    // Zustand store selectors
+      const { projectName: id } = useParams<{ projectName: string }>();
     const { getProject, deleteProject, updateProject, loading } = useProjectListStore();
-
-    // Project state
+    
     const [project, setProject] = useState<ProjectModel | undefined>(undefined);
-
-    // Edit store - will be created once we have a project
-    const [editStore, setEditStore] = useState<ReturnType<typeof createEditProjectStore> | null>(null);
-    const editState = editStore?.getState();
-
-    // For edit mode
+    const [editStore, setEditStore] = useState<EditProjectStore | null>(null);
+    
+    // ✅ Use the custom hook - no more subscription issues!
+    const editState = useEditProjectStore(editStore);  // For edit mode
     const [editMode, setEditMode] = useState(false);
 
     // Dialog for delete

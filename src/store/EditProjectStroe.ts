@@ -1,5 +1,8 @@
+// store/EditProjectStore.ts
 import ProjectModel, { ProjectModelProps } from "../core/models/ProjectModel";
 import { create } from "zustand";
+import { useStore } from "zustand";
+import { useState, useEffect } from "react";
 
 type EditStoreInputType = Omit<ProjectModelProps, "projectImages" | "projectCoverImage"> & {
     projectImages: (string | File)[];
@@ -12,9 +15,12 @@ type EditStoreInputType = Omit<ProjectModelProps, "projectImages" | "projectCove
     removeScreenshot: (index: number) => void;
     addKeyword: () => void;
     deleteKeyword: (index: number) => void;
-
 };
 
+// Type for the store
+export type EditProjectStore = ReturnType<typeof createEditProjectStore>;
+
+// Function 1: Create Store (you already have this)
 export const createEditProjectStore = (initialValues: ProjectModel) => {
     const baseData = initialValues.toJson();
 
@@ -74,4 +80,29 @@ export const createEditProjectStore = (initialValues: ProjectModel) => {
             }));
         }
     }));
+};
+
+// Function 2: Use Store (custom hook that handles subscriptions)
+export const useEditProjectStore = (store: EditProjectStore | null): EditStoreInputType | null => {
+    const [state, setState] = useState<EditStoreInputType | null>(null);
+
+    useEffect(() => {
+        if (!store) {
+            setState(null);
+            return;
+        }
+
+        // Set initial state
+        setState(store.getState());
+
+        // Subscribe to changes
+        const unsubscribe = store.subscribe(() => {
+            setState(store.getState());
+        });
+
+        // Cleanup
+        return unsubscribe;
+    }, [store]);
+
+    return state;
 };
