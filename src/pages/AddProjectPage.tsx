@@ -1,5 +1,5 @@
 // AddProjectPage.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   TextField,
   Button,
@@ -9,233 +9,274 @@ import {
   Box,
   IconButton,
   Paper,
-  circularProgressClasses,
-  CircularProgress
+  CircularProgress,
+  ImageList,
+  ImageListItem
 } from "@mui/material";
-import { useProjectListStore, ProjectAddPayload } from "../store/ProjectApiStore";
+import { useProjectListStore } from "../store/ProjectApiStore";
 import ProjectModel from "../core/models/ProjectModel";
 import DeleteIcon from "@mui/icons-material/Delete";
-import KeywordsRow from "../core/component/KeywordsRow"; // Import the KeywordsRow component
-
-// Helper: Accepts File[] and returns an array of local preview URLs
-function filesToPreviewUrls(files: File[]) {
-  return files.map((file) => URL.createObjectURL(file));
-}
+import { Add, CloudUpload } from "@mui/icons-material";
+import { createEditProjectStore, useEditProjectStore } from "../store/EditProjectStroe";
+import { useNavigate } from "react-router-dom";
 
 const AddProjectPage: React.FC = () => {
-  const [projectName, setProjectName] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
-  const [projectType, setProjectType] = useState("");
-  const [projectLink, setProjectLink] = useState("");
-  const [projectGithub, setProjectGithub] = useState("");
-  const [coverImage, setCoverImage] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [keywords, setKeywords] = useState<string[]>([]); // Add keywords state
-
   const { addProject, loading } = useProjectListStore();
+  const navigate = useNavigate();
+  
+  // Create an empty project for the store
+  const [editStore] = useState(() => {
+    const emptyProject = new ProjectModel({
+      id: "",
+      projectName: "",
+      projectDescription: "",
+      projectType: "",
+      projectLink: "",
+      projectGithub: "",
+      projectCoverImage: "",
+      projectImages: "",
+      keywords: []
+    });
+    return createEditProjectStore(emptyProject);
+  });
 
-  // Handle Cover Image Selection
-  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCoverImage(file);
-    setCoverPreview(URL.createObjectURL(file));
-  };
+  // Use the edit store
+  const editState = useEditProjectStore(editStore);
 
-  // Handle Project Images (multiple) selection
-  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    setImages(files);
-    setImagePreviews(filesToPreviewUrls(files));
-  };
+  if (!editState) {
+    return <CircularProgress />;
+  }
 
-  const removeImage = (idx: number) => {
-    const newFiles = images.filter((_, i) => i !== idx);
-    setImages(newFiles);
-    setImagePreviews(filesToPreviewUrls(newFiles));
-  };
-
-  // Keywords handlers
-  const addKeyword = () => {
-    const keyword = prompt("Enter a keyword:");
-    if (keyword && keyword.trim()) {
-      setKeywords([...keywords, keyword.trim()]);
-    }
-  };
-
-  const deleteKeyword = (index: number) => {
-    setKeywords(keywords.filter((_, i) => i !== index));
-  };
+  // Helper to get preview URLs
+  const getCoverUrl = (cover: string | File) =>
+    typeof cover === "string" ? cover : URL.createObjectURL(cover);
+  
+  const getScreenshotUrl = (img: string | File) =>
+    typeof img === "string" ? img : URL.createObjectURL(img);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Here you should upload images to your storage first and get URLs.
-    // For demo, we use preview URLs, but in real-world, upload to get URLs!
-
-    // Multiple images
-    const projectImages = imagePreviews.join(","); // Store as comma-separated for your model
-
-    const newProject = new ProjectModel({
+    const { 
+      projectName, 
+      projectDescription, 
+      projectType, 
+      projectLink, 
+      projectGithub, 
       keywords,
-      projectName,
-      projectDescription,
-      projectType,
-      projectCoverImage: coverPreview || "", // Simulate cover image URL
-      projectImages,
-      projectLink,
-      projectGithub,
-      id: "",
-    });
+      projectCoverImage,
+      projectImages
+    } = editState;
+
+    // Validate required fields
+    if (!projectName || !projectDescription) {
+      alert("Please fill in required fields");
+      return;
+    }
 
     await addProject({
       project: {
-        keywords,
         id: "",
+        keywords: keywords || [],
         projectName,
         projectDescription,
-        projectType,
-        projectLink,
-        projectGithub,
-        // ...any other fields (except cover/image which are passed separately)
+        projectType: projectType || null,
+        projectLink: projectLink || null,
+        projectGithub: projectGithub || null,
       },
-      coverImage: coverImage ?? "", // File object
-      screenshotFiles: images, // Array of File objects
+      coverImage: projectCoverImage as File | string,
+      screenshotFiles: projectImages,
     });
 
-    // Clean Form
-    setProjectName("");
-    setProjectDescription("");
-    setProjectType("");
-    setProjectLink("");
-    setProjectGithub("");
-    setCoverImage(null);
-    setCoverPreview(null);
-    setImages([]);
-    setImagePreviews([]);
-    setKeywords([]); // Reset keywords
-    alert("Project added!");
+    // Navigate to projects list or reset form
+    navigate("/");
   };
 
   return (
-    <Paper sx={{ maxWidth: 550, mx: "auto", p: 3, mt: 4 }}>
+    <Paper sx={{ maxWidth: 800, mx: "auto", p: 3, mt: 4 }}>
       <form onSubmit={handleSubmit}>
         <Typography variant="h5" mb={2}>Add New Project</Typography>
-        <Stack spacing={2}>
+        <Stack spacing={3}>
+          {/* Project Name */}
           <TextField
             label="Project Name"
-            value={projectName}
-            onChange={e => setProjectName(e.target.value)}
+            value={editState.projectName}
+            onChange={editState.updateField("projectName")}
             fullWidth
             required
           />
+
+          {/* Project Description */}
           <TextField
             label="Project Description"
             multiline
             minRows={3}
-            value={projectDescription}
-            onChange={e => setProjectDescription(e.target.value)}
+            value={editState.projectDescription}
+            onChange={editState.updateField("projectDescription")}
             fullWidth
             required
           />
+
+          {/* Project Type */}
           <TextField
             label="Project Type"
-            value={projectType}
-            onChange={e => setProjectType(e.target.value)}
+            value={editState.projectType || ""}
+            onChange={editState.updateField("projectType")}
             fullWidth
           />
 
           {/* Keywords Section */}
           <Box>
             <Typography variant="subtitle2" mb={1}>Keywords</Typography>
-            <KeywordsRow
-              keywords={keywords}
-              addKeyword={addKeyword}
-              deleteKeyword={deleteKeyword}
-            />
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              {editState.keywords.map((keyword, idx) => (
+                <Chip
+                  key={idx}
+                  label={keyword}
+                  onDelete={() => editState.deleteKeyword(idx)}
+                  size="small"
+                />
+              ))}
+              <Chip
+                label="+ Add"
+                onClick={editState.addKeyword}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
           </Box>
 
+          {/* Links */}
           <TextField
-            label="Live Link"
-            value={projectLink}
-            onChange={e => setProjectLink(e.target.value)}
+            label="Live Demo URL"
+            value={editState.projectLink || ""}
+            onChange={editState.updateField("projectLink")}
             fullWidth
           />
+          
           <TextField
-            label="GitHub Link"
-            value={projectGithub}
-            onChange={e => setProjectGithub(e.target.value)}
+            label="GitHub URL"
+            value={editState.projectGithub || ""}
+            onChange={editState.updateField("projectGithub")}
             fullWidth
           />
 
           {/* Cover Image */}
           <Box>
-            <Typography variant="subtitle2">Cover Image</Typography>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleCoverImageChange}
-              style={{ margin: "8px 0" }}
-            />
-            {coverPreview && (
+            <Typography variant="subtitle2" mb={1}>Cover Image</Typography>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<CloudUpload />}
+              sx={{ mb: 2 }}
+            >
+              Upload Cover Image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={editState.updateCoverImage}
+              />
+            </Button>
+            
+            {editState.projectCoverImage && (
               <Box mt={1}>
                 <img
-                  src={coverPreview}
+                  src={getCoverUrl(editState.projectCoverImage)}
                   alt="Project Cover"
-                  width={120}
-                  style={{ borderRadius: 8, border: "1px solid #eee" }}
+                  style={{ 
+                    maxWidth: 200, 
+                    height: 150, 
+                    objectFit: "cover",
+                    borderRadius: 8, 
+                    border: "1px solid #eee" 
+                  }}
                 />
               </Box>
             )}
           </Box>
 
-          {/* Multiple Project Images */}
+          {/* Screenshots */}
           <Box>
-            <Typography variant="subtitle2">Project Screenshots (multiple)</Typography>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImagesChange}
-              style={{ margin: "8px 0" }}
-            />
-            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
-              {imagePreviews.map((src, idx) => (
-                <Box key={idx} sx={{ position: "relative", width: 75, height: 75 }}>
-                  <img
-                    src={src}
-                    alt={`Preview ${idx + 1}`}
-                    width={75}
-                    height={75}
-                    style={{
-                      objectFit: "cover",
-                      borderRadius: 6,
-                      border: "1px solid #eee"
-                    }}
-                  />
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: -10,
-                      right: -10,
-                      bgcolor: "white",
-                      boxShadow: 2
-                    }}
-                    onClick={() => removeImage(idx)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Box>
+            <Typography variant="subtitle2" mb={1}>Project Screenshots</Typography>
+            <ImageList cols={4} rowHeight={120} sx={{ width: "100%", mb: 2 }}>
+              {editState.projectImages.map((img, idx) => (
+                <ImageListItem key={idx}>
+                  <Box sx={{ position: "relative" }}>
+                    <img
+                      src={getScreenshotUrl(img)}
+                      alt={`Screenshot ${idx + 1}`}
+                      style={{ 
+                        width: "100%", 
+                        height: 120, 
+                        objectFit: "cover",
+                        borderRadius: 4
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        bgcolor: "rgba(255,255,255,0.8)",
+                        ":hover": { bgcolor: "error.main", color: "#fff" },
+                      }}
+                      onClick={() => editState.removeScreenshot(idx)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </ImageListItem>
               ))}
-            </Stack>
+              
+              {/* Add Image Button */}
+              <ImageListItem>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{
+                    width: "100%",
+                    height: 120,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    border: "2px dashed #c8c8c8",
+                  }}
+                  startIcon={<Add />}
+                >
+                  Add
+                  <input
+                    accept="image/*"
+                    type="file"
+                    multiple
+                    hidden
+                    onChange={editState.updateImages}
+                  />
+                </Button>
+              </ImageListItem>
+            </ImageList>
           </Box>
 
-          <Button variant="contained" color="primary" type="submit" disabled={loading}>
-            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Add Project"}
-          </Button>
+          {/* Actions */}
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button 
+              variant="outlined" 
+              onClick={() => navigate("/")}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              type="submit" 
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Add Project"}
+            </Button>
+          </Stack>
         </Stack>
       </form>
     </Paper>
