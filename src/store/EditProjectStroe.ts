@@ -3,6 +3,7 @@ import ProjectModel, { ProjectModelProps } from "../core/models/ProjectModel";
 import { create } from "zustand";
 import { useStore } from "zustand";
 import { useState, useEffect } from "react";
+import { generateAIJson } from "../core/services/aiServices";
 
 type EditStoreInputType = Omit<ProjectModelProps, "projectImages" | "projectCoverImage"> & {
     projectImages: (string | File)[];
@@ -15,6 +16,7 @@ type EditStoreInputType = Omit<ProjectModelProps, "projectImages" | "projectCove
     removeScreenshot: (index: number) => void;
     addKeyword: () => void;
     deleteKeyword: (index: number) => void;
+    enhanceProjectDescription: () => void;
 };
 
 // Type for the store
@@ -78,6 +80,15 @@ export const createEditProjectStore = (initialValues: ProjectModel) => {
                 ...old,
                 keywords: old.keywords.filter((_, i) => i !== index),
             }));
+        },
+        enhanceProjectDescription: async () => {
+            const enhancedDescription = await generateAIJson(`
+                enhance the this project description showing the project feature and technology: ${baseData.projectDescription}
+                `, {
+                "response": "string"
+            }
+            );
+
         }
     }));
 };

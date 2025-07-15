@@ -15,7 +15,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-pro" });
  * @param schema An example JSON object representing the expected structure
  * @returns A typed object matching the schema
  */
-export async function generateJson<T extends Record<string, any>>(
+export async function generateAIJson<T extends Record<string, any>>(
   prompt: string,
   schema: T
 ): Promise<T> {
