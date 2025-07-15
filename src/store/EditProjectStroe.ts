@@ -16,7 +16,7 @@ type EditStoreInputType = Omit<ProjectModelProps, "projectImages" | "projectCove
     removeScreenshot: (index: number) => void;
     addKeyword: () => void;
     deleteKeyword: (index: number) => void;
-    enhanceProjectDescription: () => void;
+    enhanceProjectDescription: (projectDescription: string) => void;
 };
 
 // Type for the store
@@ -81,15 +81,26 @@ export const createEditProjectStore = (initialValues: ProjectModel) => {
                 keywords: old.keywords.filter((_, i) => i !== index),
             }));
         },
-        enhanceProjectDescription: async () => {
-            const enhancedDescription = await generateAIJson(`
-                enhance the this project description showing the project feature and technology: ${baseData.projectDescription}
-                `, {
-                "response": "string"
-            }
-            );
+        enhanceProjectDescription: async (projectDescription: string) => {
+            console.log(`Enhancing project description: ${projectDescription}`);
 
+            try {
+                const enhanced = await generateAIJson(
+                    `Enhance this project description to clearly describe its features and technologies: ${projectDescription}`,
+                    { response: "string" }
+                );
+
+                set((old) => ({
+                    ...old,
+                    projectDescription: enhanced.response, // ✅ Proper access
+                }));
+
+                return enhanced;
+            } catch (error) {
+                console.error("AI enhancement failed:", error);
+            }
         }
+
     }));
 };
 

@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 const AddProjectPage: React.FC = () => {
   const { addProject, loading } = useProjectListStore();
   const navigate = useNavigate();
-  
+
   // Create an empty project for the store
   const [editStore] = useState(() => {
     const emptyProject = new ProjectModel({
@@ -50,19 +50,26 @@ const AddProjectPage: React.FC = () => {
   // Helper to get preview URLs
   const getCoverUrl = (cover: string | File) =>
     typeof cover === "string" ? cover : URL.createObjectURL(cover);
-  
+
   const getScreenshotUrl = (img: string | File) =>
     typeof img === "string" ? img : URL.createObjectURL(img);
 
+  const handleEnhanceProjectWithAi = async (
+
+  ) => {
+    const resp = await editState.enhanceProjectDescription(editState.projectDescription);
+    console.log("the front project response is :", resp);
+
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { 
-      projectName, 
-      projectDescription, 
-      projectType, 
-      projectLink, 
-      projectGithub, 
+    const {
+      projectName,
+      projectDescription,
+      projectType,
+      projectLink,
+      projectGithub,
       keywords,
       projectCoverImage,
       projectImages
@@ -116,6 +123,9 @@ const AddProjectPage: React.FC = () => {
             fullWidth
             required
           />
+          <Button onClick={() => handleEnhanceProjectWithAi()}>
+            Enhance Description
+          </Button>
 
           {/* Project Type */}
           <TextField
@@ -154,7 +164,7 @@ const AddProjectPage: React.FC = () => {
             onChange={editState.updateField("projectLink")}
             fullWidth
           />
-          
+
           <TextField
             label="GitHub URL"
             value={editState.projectGithub || ""}
@@ -179,18 +189,18 @@ const AddProjectPage: React.FC = () => {
                 onChange={editState.updateCoverImage}
               />
             </Button>
-            
+
             {editState.projectCoverImage && (
               <Box mt={1}>
                 <img
                   src={getCoverUrl(editState.projectCoverImage)}
                   alt="Project Cover"
-                  style={{ 
-                    maxWidth: 200, 
-                    height: 150, 
+                  style={{
+                    maxWidth: 200,
+                    height: 150,
                     objectFit: "cover",
-                    borderRadius: 8, 
-                    border: "1px solid #eee" 
+                    borderRadius: 8,
+                    border: "1px solid #eee"
                   }}
                 />
               </Box>
@@ -207,9 +217,9 @@ const AddProjectPage: React.FC = () => {
                     <img
                       src={getScreenshotUrl(img)}
                       alt={`Screenshot ${idx + 1}`}
-                      style={{ 
-                        width: "100%", 
-                        height: 120, 
+                      style={{
+                        width: "100%",
+                        height: 120,
                         objectFit: "cover",
                         borderRadius: 4
                       }}
@@ -230,7 +240,7 @@ const AddProjectPage: React.FC = () => {
                   </Box>
                 </ImageListItem>
               ))}
-              
+
               {/* Add Image Button */}
               <ImageListItem>
                 <Button
@@ -261,17 +271,17 @@ const AddProjectPage: React.FC = () => {
 
           {/* Actions */}
           <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => navigate("/")}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              type="submit" 
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Add Project"}

@@ -3,11 +3,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 /**
  * Initializes the Gemini model using your API key
  */
-const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
+const API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 if (!API_KEY) throw new Error("Gemini API key is missing");
 
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 /**
  * Generate structured JSON from a prompt using a schema.
@@ -32,7 +32,9 @@ Respond ONLY with a valid JSON object and nothing else.
 `;
 
   try {
+    console.log("Prompt:", fullPrompt);
     const result = await model.generateContent(fullPrompt);
+    console.log("Response:", result.response.text());
     const rawText = result.response.text()?.trim() ?? "";
 
     const cleanText = rawText
@@ -40,6 +42,7 @@ Respond ONLY with a valid JSON object and nothing else.
       .trim();
 
     const parsed: T = JSON.parse(cleanText);
+    console.log("Generated JSON:", parsed);
     return parsed;
   } catch (err) {
     console.error("Failed to parse Gemini response as JSON:", err);
